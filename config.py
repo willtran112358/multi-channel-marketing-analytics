@@ -1,4 +1,4 @@
-"""Configuration management for Digital Marketing Analytics Platform"""
+"""Configuration for XPON multi-channel marketing analytics (GCP / BigQuery / Looker Studio)."""
 
 from typing import Optional
 from pydantic_settings import BaseSettings

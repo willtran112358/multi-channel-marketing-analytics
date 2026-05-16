@@ -2,7 +2,7 @@
 
 > Marketing intelligence platform for **XPON** (Australia) — deep integration with **Google Analytics 4**, **Google Cloud Platform** (BigQuery, Pub/Sub, Dataflow), and multi-channel campaign data for Australian enterprise clients.
 
-XPON implements and operates GA / GCP analytics stacks for clients across Australia. This repo models the **end-to-end pipeline**: GA4 & ads exports → GCP landing → attribution marts → churn/LTV ML → Streamlit dashboards.
+XPON implements and operates GA / GCP analytics stacks for clients across Australia. This repo models the **end-to-end pipeline**: GA4 & ads exports → GCP landing → attribution marts → churn/LTV ML → **Looker Studio** (Google Data Studio) client dashboards on BigQuery.
 
 ## Overview
 
@@ -12,6 +12,7 @@ XPON implements and operates GA / GCP analytics stacks for clients across Austra
 - Attribution: first/last/linear and ML-assisted credit
 - Churn & LTV scoring with confidence intervals
 - Campaign ROI, CAC, and A/B test significance
+- **BI**: **Looker Studio** reports connected to curated BigQuery marts (XPON standard delivery pattern)
 
 ## Tech Stack
 
@@ -22,7 +23,7 @@ XPON implements and operates GA / GCP analytics stacks for clients across Austra
 | **Pipeline** | Python 3.10+, Pandas, PySpark (optional) |
 | **Warehouse modeling** | dbt (BigQuery adapter) |
 | **ML** | scikit-learn, XGBoost |
-| **Dashboard** | Streamlit, Plotly |
+| **BI / dashboards** | **Looker Studio** (Google Data Studio) on BigQuery |
 | **Orchestration** | Airflow / Cloud Composer patterns |
 | **CI/CD** | GitHub Actions |
 
@@ -39,12 +40,14 @@ graph TB
     SILVER --> GOLD["Gold<br/>Attribution & KPIs"]
 
     GOLD --> DBT["dbt marts<br/>Tests & docs"]
-    DBT --> ML["ML<br/>Churn • LTV"]
-    DBT --> DASH["Streamlit<br/>XPON client dashboards"]
+    DBT --> ML["ML<br/>Churn • LTV scores"]
+    DBT --> VIEWS["BigQuery views<br/>mart_* reporting layer"]
+    VIEWS --> LS["Looker Studio<br/>XPON client dashboards"]
 
     style GA4 fill:#e8f5e9,stroke:#2e7d32
     style BQ fill:#4285f4,stroke:#fff,color:#fff
     style GOLD fill:#fff3e0,stroke:#ef6c00
+    style LS fill:#e3f2fd,stroke:#1565c0
 ```
 
 ## Key Features
@@ -54,17 +57,18 @@ graph TB
 | **GA4 → BigQuery** | Scheduled export, event param flattening, user pseudo-ID stitching |
 | **GCP-native ELT** | Partitioned tables, cost-aware clustering, IAM service accounts |
 | **Multi-touch attribution** | Channel credit across AU campaign portfolios |
-| **Client reporting** | XPON-branded KPI packs (CAC, ROAS, conversion funnels) |
+| **Looker Studio delivery** | XPON-branded templates: CAC, ROAS, funnel, channel mix (BQ connector) |
 
 ## Project Structure
 
 ```
-├── data/raw/              # Sample GA4 & ads extracts
-├── src/etl/               # Extractors & transforms
-├── src/analytics/         # Attribution & segmentation
-├── src/ml/                # Churn / LTV models
-├── src/dashboard/         # Streamlit app
-├── dags/                  # Airflow DAGs
+├── attribution.py         # Multi-touch attribution logic
+├── ml_models.py           # Churn / LTV models
+├── config.py              # Settings (GCP, BQ dataset)
+├── bi/looker_studio/      # Looker Studio + BigQuery mart definitions
+│   ├── README.md          # Report layout & connection guide
+│   └── bigquery_marts.sql # Reporting views for Looker data sources
+├── dags/                  # Airflow DAGs (optional)
 └── tests/
 ```
 
@@ -73,19 +77,26 @@ graph TB
 ```bash
 git clone https://github.com/willtran112358/xpon-multi-channel-mkt-analytics.git
 cd xpon-multi-channel-mkt-analytics
-python -m venv .venv && source .venv/bin/activate  # or venv\Scripts\activate on Windows
+python -m venv .venv && source .venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 pytest tests/ -q
-streamlit run src/dashboard/app.py
 ```
+
+### Looker Studio (BI)
+
+1. Deploy dbt/BigQuery marts (see `bi/looker_studio/bigquery_marts.sql`).
+2. In Looker Studio: **Create → Report → BigQuery** → select `xpon_marketing.mart_campaign_performance` (and related views).
+3. Use XPON template pages: executive summary, channel attribution, campaign drill-down.
+
+Details: [bi/looker_studio/README.md](bi/looker_studio/README.md)
 
 ## Configuration
 
-Set GCP project and GA4 property in `.env` (see `.env.example`):
+Set GCP project and GA4 property in `.env`:
 
 - `GCP_PROJECT_ID`
 - `GA4_PROPERTY_ID`
-- `BIGQUERY_DATASET`
+- `BIGQUERY_DATASET` (e.g. `xpon_marketing`)
 
 ---
 
