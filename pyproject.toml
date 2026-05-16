@@ -3,9 +3,9 @@ requires = ["setuptools>=65.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "multi-channel-marketing-analytics"
+name = "xpon-multi-channel-mkt-analytics"
 version = "1.0.0"
-description = "Customer acquisition, engagement, and retention analytics platform"
+description = "XPON (Australia) multi-channel marketing analytics — GA4, GCP BigQuery, attribution, churn/LTV"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
